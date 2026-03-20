@@ -48,6 +48,7 @@ export class MinecraftAdapter<B extends MinecraftBot = MinecraftBot> extends Ada
     client.once('spawn', () => {
       bot.logger.info('[spawn] bot spawned successfully as %s', client.username)
       bot.online()
+      bot.emitReady()
     })
 
     client.on('chat', (username, message) => {
@@ -70,13 +71,43 @@ export class MinecraftAdapter<B extends MinecraftBot = MinecraftBot> extends Ada
       bot.receivePrivateMessage(username, message)
     })
 
+    client.on('playerJoined', (player) => {
+      if (player.username === client.username) {
+        if (bot.config.debug) {
+          bot.logger.debug('[player-joined:self-filtered] username=%s', player.username)
+        }
+        return
+      }
+
+      bot.emitPlayerJoined(player)
+    })
+
+    client.on('playerLeft', (player) => {
+      if (player.username === client.username) {
+        if (bot.config.debug) {
+          bot.logger.debug('[player-left:self-filtered] username=%s', player.username)
+        }
+        return
+      }
+
+      bot.emitPlayerLeft(player)
+    })
+
+    client.on('death', () => {
+      bot.emitDeath()
+    })
+
     client.on('kicked', (reason, loggedIn) => {
-      bot.logger.warn('[kicked] loggedIn=%s reason=%s', loggedIn, stringifyReason(reason))
+      const stringifiedReason = stringifyReason(reason)
+      bot.logger.warn('[kicked] loggedIn=%s reason=%s', loggedIn, stringifiedReason)
+      bot.emitKicked(stringifiedReason, loggedIn)
     })
 
     client.on('end', (reason) => {
-      bot.logger.warn('[end] connection closed, reason=%s', stringifyReason(reason))
+      const stringifiedReason = stringifyReason(reason)
+      bot.logger.warn('[end] connection closed, reason=%s', stringifiedReason)
       bot.offline()
+      bot.emitDisconnected(stringifiedReason)
     })
 
     client.on('error', (error) => {

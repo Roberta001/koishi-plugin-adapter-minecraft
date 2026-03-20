@@ -1,7 +1,52 @@
 import { Context, Schema } from 'koishi'
 import { MinecraftBot } from './bot'
+export { MinecraftBot }
+export type { MinecraftInternal } from './bot'
 
 export const name = 'adapter-minecraft'
+
+export interface MinecraftEventBase {
+  serverId: string
+  host: string
+  port: number
+  botUsername: string
+  timestamp: number
+}
+
+export interface MinecraftReadyEvent extends MinecraftEventBase {
+  version?: string
+  protocolVersion?: string
+}
+
+export interface MinecraftKickedEvent extends MinecraftEventBase {
+  reason: string
+  loggedIn: boolean
+}
+
+export interface MinecraftDisconnectedEvent extends MinecraftEventBase {
+  reason: string
+}
+
+export interface MinecraftPlayerEvent extends MinecraftEventBase {
+  player: {
+    username: string
+    uuid: string
+    displayName?: string
+  }
+}
+
+export interface MinecraftDeathEvent extends MinecraftEventBase {}
+
+declare module 'koishi' {
+  interface Events {
+    'minecraft/ready'(payload: MinecraftReadyEvent): void
+    'minecraft/kicked'(payload: MinecraftKickedEvent): void
+    'minecraft/disconnected'(payload: MinecraftDisconnectedEvent): void
+    'minecraft/player-joined'(payload: MinecraftPlayerEvent): void
+    'minecraft/player-left'(payload: MinecraftPlayerEvent): void
+    'minecraft/death'(payload: MinecraftDeathEvent): void
+  }
+}
 
 export interface Config {
   host: string
